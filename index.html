@@ -387,6 +387,7 @@ function openNarrate(phaseTxt){
 }
 function startBattle(){
   openNarrate('戰鬥開始');
+  renderTabs();   // 開戰即顯示四職業分頁，否則分頁空白、隊伍 HP 會佔滿整條
   steps=[
     T('ドラキー 出現了！','sys'),
     T('ドラキー 張牙舞爪，試圖向隊伍發起突襲！','enemy'),
