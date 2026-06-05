@@ -191,7 +191,9 @@
       }
       function go(btn){
         // 前往地城 → 戰鬥頁（暫接戰鬥 demo，之後改接完整地城流程）；其餘仍顯示提示
-        if (btn.getAttribute("data-go") === "dungeon") { location.href = "combat-phaser.html"; return; }
+        var k = btn.getAttribute("data-go");
+        if (k === "dungeon") { location.href = "combat-phaser.html"; return; }
+        if (k === "heroes")  { location.href = "teacher-heroes.html"; return; }
         showLabel(btn);
       }
       document.querySelectorAll(".card").forEach(function(btn){
