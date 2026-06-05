@@ -109,6 +109,17 @@
   }
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
+  /* 音樂開關鈕 */
+  .musbtn{
+    position:fixed; right:14px; bottom:14px; z-index:60;
+    font-family:inherit; font-size:18px; color:#f4d58a;
+    background:#2a1d12cc; border:2px solid #6b4a2a; border-radius:8px;
+    padding:6px 12px; cursor:pointer; letter-spacing:1px;
+    image-rendering:pixelated; box-shadow:0 2px 0 #00000066;
+  }
+  .musbtn:hover{background:#3a281acc;}
+  .musbtn.off{color:#9a8a72; border-color:#4a3a2a;}
+
   @media (max-width:560px){
     .stats{grid-template-columns:1fr 1fr; gap:0;}
     .stats .stat:first-child{grid-column:1 / -1; border-bottom:2px solid #00000055;}
@@ -164,6 +175,9 @@
 
   <div id="toast"></div>
 
+  <button class="musbtn off" id="musBtn" type="button">♪ 音樂 關</button>
+  <audio id="bgm" src="assets/music/home.ogg" loop preload="auto"></audio>
+
   <script src="data/classData.js"></script>
   <script>
     var D = window.CLASS_DATA;
@@ -203,6 +217,23 @@
         });
       });
     }
+
+    /* ===== 背景音樂 ===== */
+    (function(){
+      var bgm = document.getElementById("bgm");
+      var btn = document.getElementById("musBtn");
+      var on = false;
+      function set(v){
+        on = v;
+        if(on){ bgm.volume = 0.5; bgm.play().catch(function(){}); }
+        else { bgm.pause(); }
+        btn.textContent = "♪ 音樂 " + (on ? "開" : "關");
+        btn.classList.toggle("off", !on);
+      }
+      btn.addEventListener("click", function(){ set(!on); });
+      // 首次與畫面互動時自動開始（繞過瀏覽器自動播放限制）
+      addEventListener("pointerdown", function once(){ if(!on) set(true); }, { once:true });
+    })();
   </script>
 </body>
 </html>
