@@ -218,21 +218,42 @@
       });
     }
 
-    /* ===== 背景音樂 ===== */
+    /* ===== 背景音樂（跨頁接續，同一首不重頭播） ===== */
     (function(){
       var bgm = document.getElementById("bgm");
       var btn = document.getElementById("musBtn");
-      var on = false;
-      function set(v){
-        on = v;
-        if(on){ bgm.volume = 0.5; bgm.play().catch(function(){}); }
-        else { bgm.pause(); }
-        btn.textContent = "♪ 音樂 " + (on ? "開" : "關");
-        btn.classList.toggle("off", !on);
+      var KEY = "dnc_bgm";
+      var on = false, saved = null;
+      try { saved = JSON.parse(sessionStorage.getItem(KEY)); } catch(e){}
+
+      function label(){ btn.textContent = "♪ 音樂 " + (on ? "開" : "關"); btn.classList.toggle("off", !on); }
+      function save(){ try { sessionStorage.setItem(KEY, JSON.stringify({ on:on, t:bgm.currentTime||0 })); } catch(e){} }
+      function play(){
+        bgm.volume = 0.5;
+        var p = bgm.play();
+        if(p && p.catch) p.catch(function(){
+          // 被瀏覽器自動播放限制擋下 → 等首次互動再從同一位置接續
+          addEventListener("pointerdown", function once(){ if(on){ bgm.volume=0.5; bgm.play().catch(function(){}); } }, { once:true });
+        });
       }
+      function seek(t){ try { if(t && bgm.duration && t < bgm.duration) bgm.currentTime = t; } catch(e){} }
+      function set(v){ on = v; if(on) play(); else bgm.pause(); label(); save(); }
+
       btn.addEventListener("click", function(){ set(!on); });
-      // 首次與畫面互動時自動開始（繞過瀏覽器自動播放限制）
-      addEventListener("pointerdown", function once(){ if(!on) set(true); }, { once:true });
+      label();
+
+      if(saved && saved.on){
+        // 上一頁正在播 → 接續上次秒數，不重頭
+        on = true; label();
+        if(bgm.readyState >= 1){ seek(saved.t); play(); }
+        else bgm.addEventListener("loadedmetadata", function(){ seek(saved.t); play(); }, { once:true });
+      } else if(!saved){
+        // 首次造訪 → 預設關，第一次點畫面自動開
+        addEventListener("pointerdown", function once(){ if(!on) set(true); }, { once:true });
+      } // saved.on === false（使用者按了靜音）→ 保持關
+
+      bgm.addEventListener("timeupdate", save);
+      addEventListener("pagehide", save);
     })();
   </script>
 </body>
