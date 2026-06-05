@@ -32,13 +32,16 @@ window.CLASS_DATA = {
     { id: 15, name: "謝佳穎", cls: "聖騎士", level: 7,  exp: 15, settledLevel: 4 }
   ],
 
-  /* 預編 5 隊 × 3 人（各缺 1 席 → 測三人一組＋自動補席） */
+  /* 4 隊，每隊 4 個席位（teamSize=4）。
+     隊1–3 滿編（四職各一）；隊4 只有 3 人 → 留 1 個空位。
+     members：依席位順序的學生 id；長度 < 4 表示後面的席位是空的。
+     未分配學生 = 不在任何 members 裡的 students（目前 15 人剛好排滿、無未分配）。 */
+  teamSize: 4,
   teams: [
-    { id: 1, name: "烈焰小隊", gold: 120, members: [1, 2, 3] },
-    { id: 2, name: "碧水盟",   gold: 80,  members: [4, 5, 6] },
-    { id: 3, name: "鐵壁團",   gold: 200, members: [7, 8, 9] },
-    { id: 4, name: "疾風隊",   gold: 50,  members: [10, 11, 12] },
-    { id: 5, name: "曙光會",   gold: 0,   members: [13, 14, 15] }
+    { id: 1, name: "烈焰小隊", gold: 120, members: [1, 2, 3, 4] },
+    { id: 2, name: "碧水盟",   gold: 80,  members: [5, 6, 7, 8] },
+    { id: 3, name: "鐵壁團",   gold: 200, members: [9, 10, 11, 12] },
+    { id: 4, name: "疾風隊",   gold: 50,  members: [13, 14, 15] }
   ],
 
   /* 任務名稱池（捏的假資料，給冒險者管理的「近期完成任務」用） */
