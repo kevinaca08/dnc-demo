@@ -43,6 +43,12 @@
   }
   @keyframes flicker{0%,100%{opacity:1;}45%{opacity:.92;}60%{opacity:.97;}75%{opacity:.88;}}
 
+  /* 場景背景：cover + 模糊 + 55% 暗罩（負 z-index 墊在內容下方，不動排版） */
+  .scene{ position:fixed; inset:0; z-index:-3;
+    background:#0a0603 center/cover no-repeat; background-image:url("assets/bg-home.jpeg");
+    filter:blur(3px) brightness(.97); transform:scale(1.03); }
+  .scrim{ position:fixed; inset:0; z-index:-2; background:#0a0603; opacity:.55; pointer-events:none; }
+
   .wrap{width:100%; max-width:860px; position:relative; z-index:1;}
 
   /* 石牆邊框 + 中間半透明（方正像素感） */
@@ -131,6 +137,8 @@
 </style>
 </head>
 <body>
+  <div class="scene"></div>
+  <div class="scrim"></div>
   <div class="wrap">
 
     <div class="banner stoneframe">
