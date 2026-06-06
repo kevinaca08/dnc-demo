@@ -170,14 +170,15 @@
   }
   /* ── 斜 15° 像素火把（spritesheet 8格動畫），從右下伸入、中段切出畫面 ── */
   .torch{
-    position:fixed; right:0%; bottom:-24vh; z-index:5; width:64px; height:64px;
-    background:url("assets/torch-strip.png") 0 0 / 512px 64px no-repeat;
+    position:fixed; right:1%; bottom:-12vh; z-index:5;
+    width:46vh; height:46vh;   /* 改用 vh → 隨視窗高等比例縮放，不再固定 px 在寬螢幕爆大 */
+    background:url("assets/torch-strip.png") 0 0 / 368vh 46vh no-repeat;   /* 8 格 × 46vh */
     image-rendering:pixelated; transform-origin:50% 100%;
-    transform:rotate(-15deg) scale(12);
+    transform:rotate(-15deg);
     animation:torchplay 1.8s steps(8) infinite;
     filter:saturate(0.6) drop-shadow(0 0 10px #ff8a2e88);
   }
-  @keyframes torchplay{ from{ background-position:0 0; } to{ background-position:-512px 0; } }
+  @keyframes torchplay{ from{ background-position-x:0; } to{ background-position-x:-368vh; } }
 
   [hidden]{ display:none !important; }
 
