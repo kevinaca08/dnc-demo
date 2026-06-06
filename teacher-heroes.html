@@ -23,25 +23,24 @@
   body{
     font-family:"ToneOZ","KaiTi","DFKai-SB","Microsoft JhengHei",serif;
     color:#f3e3c4;
-    background:linear-gradient(165deg,#150d07,#080503);
-    min-height:100%; position:relative;
-    display:flex; flex-direction:column; align-items:center;
-    padding:18px 14px 30px;
+    background-color:#2a1810;
+    background-image:url("assets/walnut-mirror.png");   /* 乾淨木紋・鏡像無縫 */
+    background-repeat:repeat; background-size:1024px 1024px;
+    image-rendering:pixelated;
+    height:100%; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; /* 書上下置中 */
+    padding:0;
   }
+  /* 暗角（右下火把側留亮） */
   body::before{
     content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
-    background:
-      radial-gradient(700px 460px at 20% 6%, #ff9a3d28, transparent 60%),
-      radial-gradient(700px 460px at 80% 6%, #ff8a3222, transparent 60%),
-      radial-gradient(1200px 900px at 50% 50%, transparent 55%, #000000aa 100%);
-    animation:flicker 4.5s ease-in-out infinite;
+    background:radial-gradient(130% 130% at 82% 82%, transparent 26%, #000000bb 92%);
   }
-  @keyframes flicker{0%,100%{opacity:1;}45%{opacity:.93;}70%{opacity:.97;}85%{opacity:.9;}}
 
   /* ── 頂列 ── */
   .topbar{
-    width:100%; max-width:960px; z-index:2;
-    display:flex; align-items:center; gap:14px; margin-bottom:8px;
+    position:fixed; top:14px; left:16px; z-index:11;
+    display:flex; align-items:center; gap:14px;
   }
   .navbtn{
     font-family:inherit; font-size:20px; cursor:pointer; color:#f3e3c4;
@@ -55,9 +54,10 @@
   /* ── 書本 ── */
   .book{
     position:relative; z-index:1; container-type:inline-size;
-    width:min(95vw, 960px); aspect-ratio:1260 / 848;
-    background:url("assets/book-clean.png") center/contain no-repeat;
-    filter:drop-shadow(0 14px 30px #000a);
+    width:min(95vw, calc(88vh * 1.4858)); aspect-ratio:1260 / 848;   /* 放大、以高度為準 → 上下留白一致 */
+    background:url("assets/book-trans-2.png") center/contain no-repeat;
+    image-rendering:pixelated;
+    filter:drop-shadow(0 18px 36px #000c);
   }
   .page{ position:absolute; overflow:hidden; }
   .page.left{  left:19%;  width:28%;   top:13%; height:64%; }
@@ -67,8 +67,8 @@
 
   /* ── 名冊（兩頁各 2 欄） ── */
   .roster{ height:100%; display:grid; grid-template-columns:1fr 1fr;
-    grid-template-rows:repeat(4,1fr); grid-auto-flow:column; gap:2% 6%;
-    align-content:center; }
+    grid-template-rows:repeat(6,1fr); grid-auto-flow:row; gap:2% 6%;
+    align-content:start; }
   .namebox{
     display:flex; flex-direction:column; justify-content:center; gap:1px; cursor:pointer;
     min-width:0; overflow:hidden; padding:3px 5px; border-radius:3px;
@@ -139,14 +139,16 @@
     border-radius:4px; box-shadow:0 4px 12px #000a; pointer-events:none; line-height:1.4; }
 
   /* 翻頁 */
-  .pager{ display:flex; align-items:center; gap:16px; margin-top:12px; z-index:2;
+  .pager{ position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+    display:flex; align-items:center; gap:16px; z-index:11;
     color:#cbb389; font-size:18px; }
   .pager button{ font-family:inherit; cursor:pointer; font-size:17px; color:#f3e3c4;
     background:#1c1107; border:2px solid #4a3320; padding:5px 16px; border-radius:4px; }
   .pager button:disabled{ opacity:.3; cursor:default; }
 
   /* 操作方塊（新增學生 / 等級結算 / 編輯經驗 / 刪除冒險者）— 無框無底，滑過圖標晃動 */
-  .actions{ position:fixed; right:24px; bottom:18px; z-index:5; display:flex; gap:24px; align-items:flex-end; }
+  /* 操作鈕：搬到左下角（右下角讓給火把/火光） */
+  .actions{ position:fixed; left:24px; bottom:18px; z-index:11; display:flex; gap:24px; align-items:flex-end; }
   .actbtn{ display:flex; flex-direction:column; align-items:center; gap:3px;
     background:none; border:none; cursor:pointer; }
   .actbtn img{ height:48px; width:auto; image-rendering:pixelated;
@@ -154,6 +156,28 @@
   .actbtn span{ font-size:14px; color:#f3e3c4; text-shadow:0 1px 3px #000; letter-spacing:1px; }
   .actbtn:hover img{ transform:translateY(-4px) rotate(-5deg); }
   .actbtn.danger:hover img{ transform:translateY(-4px) rotate(5deg); }
+
+  /* ── 右下角火光（放大、明滅放慢 3×、亮度 0.7） ── */
+  .torchlight{
+    position:fixed; inset:0; z-index:3; pointer-events:none; mix-blend-mode:screen;
+    background:radial-gradient(72vw 72vw at 84% 76%,
+      rgba(255,192,98,.74), rgba(255,142,52,.36) 30%, rgba(255,112,42,.13) 54%, transparent 74%);
+    animation:torchflick 7.8s ease-in-out infinite; filter:brightness(0.7);
+  }
+  @keyframes torchflick{
+    0%{opacity:.78;} 12%{opacity:1;} 24%{opacity:.62;} 38%{opacity:.92;}
+    52%{opacity:.56;} 66%{opacity:1;} 80%{opacity:.72;} 100%{opacity:.78;}
+  }
+  /* ── 斜 15° 像素火把（spritesheet 8格動畫），從右下伸入、中段切出畫面 ── */
+  .torch{
+    position:fixed; right:0%; bottom:-24vh; z-index:5; width:64px; height:64px;
+    background:url("assets/torch-strip.png") 0 0 / 512px 64px no-repeat;
+    image-rendering:pixelated; transform-origin:50% 100%;
+    transform:rotate(-15deg) scale(12);
+    animation:torchplay 1.8s steps(8) infinite;
+    filter:saturate(0.6) drop-shadow(0 0 10px #ff8a2e88);
+  }
+  @keyframes torchplay{ from{ background-position:0 0; } to{ background-position:-512px 0; } }
 
   [hidden]{ display:none !important; }
 
@@ -210,6 +234,10 @@
 
   <div id="tip" hidden></div>
 
+  <!-- 右下角火光 + 像素火把 -->
+  <div class="torchlight"></div>
+  <div class="torch"></div>
+
   <button class="musbtn off" id="musBtn" type="button">♪ 音樂 關</button>
   <audio id="bgm" src="assets/music/home.ogg" loop preload="auto"></audio>
 
@@ -248,11 +276,15 @@
       var total = totalSpreads();
       spread = Math.max(0, Math.min(spread, total - 1));
       var slice = D.students.slice(spread * PER_SPREAD, spread * PER_SPREAD + PER_SPREAD);
-      var rows = Math.min(6, Math.max(1, Math.ceil(slice.length / 4))), half = rows * 2;
+      var rows = 6;   // 固定 6 列高 → 從最上面開始排
       var e1 = document.getElementById("rosterLeft"), e2 = document.getElementById("rosterRight");
       e1.style.gridTemplateRows = e2.style.gridTemplateRows = "repeat(" + rows + ",1fr)";
-      e1.innerHTML = slice.slice(0, half).map(nameBox).join("");
-      e2.innerHTML = slice.slice(half).map(nameBox).join("");
+      // 左右兩頁視為同一列連續：每列 4 人＝左頁 2＋右頁 2（座號 1,2|3,4 / 5,6|7,8 …）
+      // 依跨頁序號 i：i%4 為 0/1→左頁、2/3→右頁；列數 = floor(i/4)，由 row-major 自動歸位
+      var left = [], right = [];
+      slice.forEach(function(s, i){ (i % 4 < 2 ? left : right).push(s); });
+      e1.innerHTML = left.map(nameBox).join("");
+      e2.innerHTML = right.map(nameBox).join("");
       if(total > 1){
         pager.hidden = false;
         pageInd.textContent = "第 " + (spread + 1) + " / " + total + " 頁";
