@@ -13,7 +13,7 @@
   :root{
     --bg0:#120c06; --bg1:#241710;
     --torch:#ff9a3d; --torch-soft:#ffb24d;
-    --gold:#f4d58a; --ink:#2a1c10;
+    --gold:#e7b84f; --ink:#2a1c10;
     --parch0:#e9d4a3; --parch1:#d8bd84; --parchline:#b9975a;
   }
   *{ box-sizing:border-box; }
@@ -102,6 +102,7 @@
   .cls-1{ background:#5a52b8; }  /* 法師 */
   .cls-2{ background:#c79324; color:#3a2a08; } /* 聖騎士 */
   .cls-3{ background:#3f8a52; }  /* 盜賊 */
+  .cls-none{ background:#8a8170; color:#2a2218; }  /* 無（未指派職業） */
 
   /* 彈窗 */
   .overlay{ position:fixed; inset:0; z-index:80; display:none;
@@ -151,6 +152,38 @@
   .musbtn.off{ color:#9a8a72; border-color:#4a3a2a; }
 
   @media (max-width:680px){ .board{ grid-template-columns:1fr; } }
+  /* 操作鈕（新增/刪除隊伍）— 左下角，無框、滑過晃動 */
+  .actions{ position:fixed; left:24px; bottom:18px; z-index:11; display:flex; gap:24px; align-items:flex-end; }
+  .actbtn{ display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; cursor:pointer; }
+  .actbtn img{ height:48px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 6px #000a); transition:transform .12s ease; }
+  .actbtn span{ font-size:14px; color:#f3e3c4; text-shadow:0 1px 3px #000; letter-spacing:1px; }
+  .actbtn:hover img{ transform:translateY(-4px) rotate(-5deg); }
+  .actbtn.danger:hover img{ transform:translateY(-4px) rotate(5deg); }
+
+  /* ── 刪除隊伍：多選模式 ── */
+  .delveil{ position:fixed; inset:0; background:#ffffffb3; z-index:40; display:none; }  /* 白罩，蓋住隊伍以外 */
+  body.delmode .delveil{ display:block; }
+  body.delmode .board{ position:relative; z-index:50; }    /* 隊伍卡浮到白罩之上 */
+  body.delmode .actions, body.delmode .musbtn{ display:none; }
+  .tcard .chk{ position:absolute; top:10px; left:10px; width:26px; height:26px; display:none; z-index:3;
+    border:3px solid #6b4a2a; border-radius:5px; background:#fffaf0; box-shadow:0 2px 4px #0006; }
+  body.delmode .tcard{ cursor:pointer; }
+  body.delmode .tcard .chk{ display:block; }
+  .tcard.sel{ outline:4px solid #b8413a; outline-offset:2px; }
+  .tcard.sel .chk{ background:#b8413a; }
+  .tcard.sel .chk::after{ content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
+  /* 全選（中上） */
+  .deltop{ position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:60; display:none;
+    align-items:center; gap:10px; cursor:pointer; font-family:inherit; font-size:18px; color:var(--gold);
+    background:#1c1107; border:2px solid #6b4a2a; border-radius:8px; padding:8px 18px; box-shadow:0 2px 0 #00000066; }
+  body.delmode .deltop{ display:flex; }
+  .deltop .box{ width:22px; height:22px; border:3px solid var(--gold); border-radius:4px; position:relative; }
+  .deltop.all .box{ background:var(--gold); }
+  .deltop.all .box::after{ content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#1c1107; font-size:16px; }
+  /* 確認/取消（底部） */
+  .delbar{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:60; display:none; gap:16px; }
+  body.delmode .delbar{ display:flex; }
+
   [hidden]{ display:none !important; }
 </style>
 </head>
@@ -164,6 +197,20 @@
   </div>
 
   <div class="board" id="board"></div>
+
+  <!-- 操作鈕：新增 / 刪除隊伍 -->
+  <div class="actions" id="teamActions">
+    <button class="actbtn" id="addTeamBtn"><img src="assets/icons/add-team.png" alt=""><span>新增隊伍</span></button>
+    <button class="actbtn danger" id="delTeamBtn"><img src="assets/icons/delete-x.png" alt=""><span>刪除隊伍</span></button>
+  </div>
+
+  <!-- 刪除隊伍多選 UI -->
+  <div class="delveil" id="delVeil"></div>
+  <div class="deltop" id="delAll"><span class="box"></span>全選</div>
+  <div class="delbar" id="delBar">
+    <button class="btn danger" id="delConfirm">確認刪除</button>
+    <button class="btn ghost" id="delCancel">取消</button>
+  </div>
 
   <!-- 成員操作彈窗 -->
   <div class="overlay" id="memberOverlay">
@@ -195,7 +242,7 @@
   <div id="toast"></div>
 
   <button class="musbtn off" id="musBtn" type="button">♪ 音樂 關</button>
-  <audio id="bgm" src="assets/music/teams.ogg" loop preload="auto"></audio>
+  <audio id="bgm" data-track="teams" src="assets/music/teams.ogg" loop preload="auto"></audio>
 
   <script src="data/classData.js"></script>
   <script>
@@ -204,7 +251,7 @@
     function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
       return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); }
     function pad2(n){ return (n<10?"0":"")+n; }
-    function clsKey(cls){ var i = D.classes.indexOf(cls); return i<0?0:i; }
+    function clsKey(cls){ var i = D.classes.indexOf(cls); return i<0 ? "none" : i; }  // 非四職業（如「無」）→ 灰徽章
     var SIZE = D.teamSize || 4;
 
     function teamById(id){ for(var i=0;i<D.teams.length;i++) if(D.teams[i].id===id) return D.teams[i]; return null; }
@@ -232,7 +279,8 @@
       var board = document.getElementById("board");
       var html = "";
       D.teams.forEach(function(team){
-        html += '<div class="tcard">';
+        html += '<div class="tcard" data-team="'+team.id+'">';
+        html += '<div class="chk"></div>';
         html += '<div class="thead"><span class="tname">'+esc(team.name)+
                 '</span><span class="tgold">💰 '+team.gold+'</span></div>';
         html += '<div class="seats">';
@@ -331,8 +379,8 @@
       if(team.members.filter(function(x){ return x!=null; }).length >= SIZE){
         showToast(team.name+" 已滿（"+SIZE+" 人）"); return;
       }
-      // 驗證：同隊同職最多 2
-      if(classCount(team, s.cls, null) >= 2){
+      // 驗證：同隊同職最多 2（「無」未指派職業不受限）
+      if(D.classes.indexOf(s.cls) >= 0 && classCount(team, s.cls, null) >= 2){
         showToast(team.name+" 已有 2 位"+s.cls+"；加入後可點該成員改職業");
         return;
       }
@@ -344,6 +392,10 @@
 
     /* ---------- 告示板點擊委派 ---------- */
     document.getElementById("board").addEventListener("click", function(e){
+      if(delmode){   // 刪除模式：點整張卡＝勾選/取消
+        var card = e.target.closest(".tcard"); if(!card) return;
+        card.classList.toggle("sel"); syncAll(); return;
+      }
       var seat = e.target.closest(".seat"); if(!seat) return;
       var act = seat.getAttribute("data-act");
       if(act === "member"){
@@ -356,48 +408,51 @@
     [memberOverlay, pickOverlay].forEach(function(ov){
       ov.addEventListener("click", function(e){ if(e.target === ov){ ov.classList.remove("show"); ctx=null; pickCtx=null; } });
     });
-    document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ closeMember(); closePick(); } });
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ closeMember(); closePick(); if(delmode) exitDel(); } });
 
     document.getElementById("backBtn").addEventListener("click", function(){ location.href = "index.html"; });
 
+    /* ---------- 新增隊伍 ---------- */
+    document.getElementById("addTeamBtn").addEventListener("click", function(){
+      var name = prompt("輸入新隊伍名稱：");
+      if(name === null) return;
+      name = (name || "").trim();
+      if(!name){ alert("隊伍名稱不可空白"); return; }
+      var newId = D.teams.reduce(function(m,t){ return Math.max(m, t.id); }, 0) + 1;
+      D.teams.push({ id:newId, name:name, gold:0, members:[] });
+      render();
+      showToast("已新增隊伍「" + name + "」");
+    });
+
+    /* ---------- 刪除隊伍（多選） ---------- */
+    var delmode = false;
+    var delAll = document.getElementById("delAll");
+    function allCards(){ return [].slice.call(document.querySelectorAll(".tcard")); }
+    function selCards(){ return [].slice.call(document.querySelectorAll(".tcard.sel")); }
+    function syncAll(){ var cs = allCards(); delAll.classList.toggle("all", cs.length > 0 && selCards().length === cs.length); }
+    function clearSel(){ selCards().forEach(function(c){ c.classList.remove("sel"); }); }
+    function enterDel(){ delmode = true; clearSel(); document.body.classList.add("delmode"); syncAll(); }
+    function exitDel(){ delmode = false; document.body.classList.remove("delmode"); clearSel(); }
+
+    document.getElementById("delTeamBtn").addEventListener("click", enterDel);
+    document.getElementById("delCancel").addEventListener("click", exitDel);
+    delAll.addEventListener("click", function(){
+      var cs = allCards();
+      var all = cs.length > 0 && cs.every(function(c){ return c.classList.contains("sel"); });
+      cs.forEach(function(c){ c.classList.toggle("sel", !all); });
+      syncAll();
+    });
+    document.getElementById("delConfirm").addEventListener("click", function(){
+      var ids = selCards().map(function(c){ return parseInt(c.getAttribute("data-team"), 10); });
+      if(!ids.length){ showToast("尚未選擇要刪除的隊伍"); return; }
+      if(!confirm("確定刪除選取的 " + ids.length + " 個隊伍？\n（隊員會變回未分配，學生資料保留）")) return;
+      D.teams = D.teams.filter(function(t){ return ids.indexOf(t.id) < 0; });
+      exitDel(); render();
+      showToast("已刪除 " + ids.length + " 個隊伍");
+    });
+
     render();
-
-    /* ===== 背景音樂（跨頁接續，同曲才續秒數） ===== */
-    (function(){
-      var TRACK = "teams";
-      var bgm = document.getElementById("bgm");
-      var btn = document.getElementById("musBtn");
-      var KEY = "dnc_bgm";
-      var on = false, saved = null;
-      try { saved = JSON.parse(sessionStorage.getItem(KEY)); } catch(e){}
-
-      function label(){ btn.textContent = "♪ 音樂 " + (on ? "開" : "關"); btn.classList.toggle("off", !on); }
-      function save(){ try { sessionStorage.setItem(KEY, JSON.stringify({ on:on, t:bgm.currentTime||0, track:TRACK })); } catch(e){} }
-      function play(){
-        bgm.volume = 0.5;
-        var p = bgm.play();
-        if(p && p.catch) p.catch(function(){
-          addEventListener("pointerdown", function once(){ if(on){ bgm.volume=0.5; bgm.play().catch(function(){}); } }, { once:true });
-        });
-      }
-      function seek(t){ try { if(t && bgm.duration && t < bgm.duration) bgm.currentTime = t; } catch(e){} }
-      function set(v){ on = v; if(on) play(); else bgm.pause(); label(); save(); }
-
-      btn.addEventListener("click", function(){ set(!on); });
-      label();
-
-      if(saved && saved.on){
-        on = true; label();
-        var go = function(){ if(saved.track === TRACK) seek(saved.t); play(); };
-        if(bgm.readyState >= 1) go();
-        else bgm.addEventListener("loadedmetadata", go, { once:true });
-      } else if(!saved){
-        addEventListener("pointerdown", function once(){ if(!on) set(true); }, { once:true });
-      }
-
-      bgm.addEventListener("timeupdate", save);
-      addEventListener("pagehide", save);
-    })();
   </script>
+  <script src="data/music.js"></script>
 </body>
 </html>
